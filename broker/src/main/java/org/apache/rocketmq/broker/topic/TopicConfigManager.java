@@ -40,13 +40,17 @@ import org.apache.rocketmq.common.protocol.body.KVTable;
 import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 
+/**
+ * topic配置管理，持久化后的数据存储在用户目录的store下面，文件名为topics.json
+ */
 public class TopicConfigManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long LOCK_TIMEOUT_MILLIS = 3000;
     private transient final Lock lockTopicConfigTable = new ReentrantLock();
 
+    // topicConfig同步的主要是topicConfigTable和dataVersion数据
     private final ConcurrentMap<String, TopicConfig> topicConfigTable =
-        new ConcurrentHashMap<String, TopicConfig>(1024);
+        new ConcurrentHashMap<String, TopicConfig>(1024); //key是topicName,value是TopicConfig对象
     private final DataVersion dataVersion = new DataVersion();
     private final Set<String> systemTopicList = new HashSet<String>();
     private transient BrokerController brokerController;

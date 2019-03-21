@@ -405,6 +405,7 @@ public class BrokerController {
             }
 
             if (!messageStoreConfig.isEnableDLegerCommitLog()) {
+                // 如果是SLAVE的话，更新高可用master的地址
                 if (BrokerRole.SLAVE == this.messageStoreConfig.getBrokerRole()) {
                     if (this.messageStoreConfig.getHaMasterAddress() != null && this.messageStoreConfig.getHaMasterAddress().length() >= 6) {
                         this.messageStore.updateHaMasterAddress(this.messageStoreConfig.getHaMasterAddress());
@@ -413,6 +414,7 @@ public class BrokerController {
                         this.updateMasterHAServerAddrPeriodically = true;
                     }
                 } else {
+                    // 如果是Master的话，在启动10秒之后每隔60秒打印一次master和slave的差距
                     this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                         @Override
                         public void run() {
@@ -669,6 +671,9 @@ public class BrokerController {
         this.messageStore = messageStore;
     }
 
+    /**
+     * 打印master和slave之间的差距
+     */
     private void printMasterAndSlaveDiff() {
         long diff = this.messageStore.slaveFallBehindMuch();
 
@@ -853,7 +858,9 @@ public class BrokerController {
         }
 
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
+            //
             startProcessorByHa(messageStoreConfig.getBrokerRole());
+            // 处理元数据同步
             handleSlaveSynchronize(messageStoreConfig.getBrokerRole());
         }
 
@@ -1104,11 +1111,14 @@ public class BrokerController {
 
 
     private void handleSlaveSynchronize(BrokerRole role) {
+        // 如果是slave的话
         if (role == BrokerRole.SLAVE) {
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
+            // 更新master地址
             this.slaveSynchronize.setMasterAddr(null);
+            // 启动一个定时的单线程池，在3秒之后的每隔10秒同步元数据（4.5版本之前是在启动10秒之后每隔60秒同步一次）
             slaveSyncFuture = this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {

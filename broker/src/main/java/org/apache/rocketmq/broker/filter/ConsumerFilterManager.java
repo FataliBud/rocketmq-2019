@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Consumer filter data manager.Just manage the consumers use expression filter.
+ *
  */
 public class ConsumerFilterManager extends ConfigManager {
 
